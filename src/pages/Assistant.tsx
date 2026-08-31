@@ -42,7 +42,37 @@ export const Assistant: React.FC = () => {
 
   useEffect(() => {
     fetchIntegrations();
+    fetchActiveConversation();
   }, []);
+
+  const fetchActiveConversation = async () => {
+    try {
+      const res = await fetchWithAuth('/conversations/active');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.conversationId) {
+          setConversationId(data.conversationId);
+        }
+        if (Array.isArray(data.messages)) {
+          const loadedMessages: ChatMessage[] = data.messages.map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            timestamp: m.createdAt
+              ? new Date(m.createdAt).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })
+              : getFormattedTimestamp(),
+          }));
+          setMessages(loadedMessages);
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao carregar histórico de conversas:', e);
+    }
+  };
 
   const fetchIntegrations = async () => {
     try {
