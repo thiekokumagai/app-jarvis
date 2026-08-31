@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cyber-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="50%" stop-color="#0088FF" />
+      <stop offset="100%" stop-color="#7000FF" />
+    </linearGradient>
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#050B14" stop-opacity="0" />
+    </radialGradient>
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Shield -->
+  <rect width="512" height="512" rx="128" fill="#050B14" />
+  <circle cx="256" cy="256" r="230" fill="url(#bg-glow)" />
+
+  <!-- Outer Tech Circuit Ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#cyber-grad)" stroke-width="4" stroke-dasharray="12 8" opacity="0.6" />
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#00F0FF" stroke-width="2" opacity="0.3" />
+
+  <!-- Cyber Llama Silhouette Path -->
+  <g filter="url(#neon-glow)">
+    <!-- Ears -->
+    <path d="M 180 80 Q 200 130 205 190 Z" fill="url(#cyber-grad)" />
+    <path d="M 230 70 Q 245 130 240 185 Z" fill="url(#cyber-grad)" />
+
+    <!-- Head & Long Neck Contour -->
+    <path d="M 205 190 
+             C 210 160, 290 140, 340 210 
+             C 365 245, 340 270, 310 270 
+             L 280 270 
+             L 280 370 
+             C 280 410, 250 430, 210 430 
+             C 170 430, 160 390, 160 350 
+             L 160 250 
+             Z" 
+          fill="none" 
+          stroke="url(#cyber-grad)" 
+          stroke-width="14" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Visor / HUD Eyepiece -->
+    <path d="M 285 205 L 340 210 L 320 240 L 275 235 Z" fill="#00F0FF" opacity="0.9" />
+    <circle cx="310" cy="222" r="5" fill="#FFFFFF" />
+
+    <!-- Geometric Tech Lines on Body -->
+    <path d="M 220 280 L 260 320 M 200 320 L 250 370 M 180 360 L 220 400" stroke="#00F0FF" stroke-width="4" stroke-linecap="round" opacity="0.7" />
+  </g>
+
+  <!-- JARVIS HUD Target Nodes -->
+  <circle cx="340" cy="210" r="12" fill="none" stroke="#00F0FF" stroke-width="3" />
+  <circle cx="340" cy="210" r="4" fill="#00F0FF" />
+</svg>

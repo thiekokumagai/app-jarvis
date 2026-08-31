@@ -32,15 +32,49 @@ export const Connections: React.FC = () => {
 
   useEffect(() => {
     fetchIntegrations();
+
+    // Check for Google OAuth callback code in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      setActionLoading('google');
+      fetchWithAuth('/integrations/google/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+        .then(() => {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          fetchIntegrations();
+        })
+        .catch(console.error)
+        .finally(() => setActionLoading(null));
+    }
   }, []);
 
   const handleToggleGoogle = async (isCurrentlyConnected: boolean) => {
     setActionLoading('google');
     try {
-      const endpoint = isCurrentlyConnected ? '/integrations/google/disconnect' : '/integrations/google/connect';
-      const res = await fetchWithAuth(endpoint, { method: 'POST' });
-      if (res.ok) {
-        await fetchIntegrations();
+      if (isCurrentlyConnected) {
+        const res = await fetchWithAuth('/integrations/google/disconnect', { method: 'POST' });
+        if (res.ok) {
+          await fetchIntegrations();
+        }
+      } else {
+        // Try getting real Google Auth URL
+        const urlRes = await fetchWithAuth('/integrations/google/url');
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData?.configured && urlData?.url) {
+            window.location.href = urlData.url;
+            return;
+          }
+        }
+        // Fallback to direct connect
+        const res = await fetchWithAuth('/integrations/google/connect', { method: 'POST' });
+        if (res.ok) {
+          await fetchIntegrations();
+        }
       }
     } catch (err) {
       console.error(err);

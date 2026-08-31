@@ -7,6 +7,8 @@ import { Register } from './pages/Register';
 import { Assistant } from './pages/Assistant';
 import { Connections } from './pages/Connections';
 import { Settings } from './pages/Settings';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
+import { PushNotificationManager } from './components/PushNotificationManager';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -31,6 +33,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PWAUpdatePrompt />
+        <PushNotificationManager />
         <Routes>
           {/* Public Authentication Routes */}
           <Route path="/login" element={<Login />} />
@@ -69,3 +73,4 @@ export const App: React.FC = () => {
     </BrowserRouter>
   );
 };
+
