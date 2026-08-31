@@ -4,19 +4,25 @@ import { soundManager } from '../lib/sound';
 
 interface JarvisBootOverlayProps {
   onComplete: () => void;
+  userName?: string;
 }
 
-export const JarvisBootOverlay: React.FC<JarvisBootOverlayProps> = ({ onComplete }) => {
+export const JarvisBootOverlay: React.FC<JarvisBootOverlayProps> = ({ onComplete, userName }) => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [isFading, setIsFading] = useState(false);
+
+  const formattedName = userName ? userName.trim().split(' ')[0].toUpperCase() : '';
+  const welcomeText = formattedName
+    ? `SISTEMA OPERACIONAL. SEJA BEM-VINDO, ${formattedName}.`
+    : 'SISTEMA OPERACIONAL. SEJA BEM-VINDO.';
 
   const bootLogs = [
     'INICIALIZANDO ARQUITETURA CORE J.A.R.V.I.S....',
     'VERIFICANDO BIOMETRIA E ISOLAMENTO MULTI-TENANT...',
     'CONFIGURANDO CRIPTOGRAFIA AES-256 DE TOKENS...',
     'ESTABELECENDO ENGINE DE TOOL CALLING E VOZ...',
-    'SISTEMA OPERACIONAL. SEJA BEM-VINDO, SENHOR.'
+    welcomeText,
   ];
 
   useEffect(() => {

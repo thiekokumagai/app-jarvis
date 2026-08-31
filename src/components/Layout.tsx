@@ -42,7 +42,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <HudBackground />
 
       {/* Boot Overlay Sequence */}
-      {showBoot && <JarvisBootOverlay onComplete={() => setShowBoot(false)} />}
+      {showBoot && <JarvisBootOverlay userName={user?.name} onComplete={() => setShowBoot(false)} />}
 
       {/* HUD Header */}
       <header className="border-b border-cyan-500/20 glass-panel sticky top-0 z-50">

@@ -86,11 +86,17 @@ export const Assistant: React.FC = () => {
     }
   };
 
+  const [continuousMode, setContinuousMode] = useState<boolean>(true);
+  const isContinuousRef = useRef<boolean>(true);
+  const isUserStoppedRef = useRef<boolean>(false);
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef<string>('');
 
-  // Handle Microphone Permission and Real Speech Recognition via Web Speech API
-  const handleMicClick = async () => {
+  useEffect(() => {
+    isContinuousRef.current = continuousMode;
+  }, [continuousMode]);
+
+  const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -98,12 +104,12 @@ export const Assistant: React.FC = () => {
       return;
     }
 
-    if (voiceState === 'listening') {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setVoiceState('idle');
-      return;
+    isUserStoppedRef.current = false;
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {}
     }
 
     try {
@@ -133,26 +139,56 @@ export const Assistant: React.FC = () => {
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Erro no reconhecimento de voz:', event.error);
-        if (event.error !== 'no-speech') {
+        console.warn('Evento de erro no reconhecimento de voz:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'audio-capture') {
+          isUserStoppedRef.current = true;
           setVoiceState('idle');
         }
       };
 
       recognition.onend = () => {
-        setVoiceState('idle');
         const textToSend = transcriptRef.current.trim();
+        transcriptRef.current = '';
+
         if (textToSend) {
+          setVoiceState('idle');
           sendMessage(textToSend);
-          transcriptRef.current = '';
+        } else if (isContinuousRef.current && !isUserStoppedRef.current) {
+          // Restart with fresh SpeechRecognition instance after silence or pause
+          setTimeout(() => {
+            if (isContinuousRef.current && !isUserStoppedRef.current) {
+              startListening();
+            } else {
+              setVoiceState('idle');
+            }
+          }, 350);
+        } else {
+          setVoiceState('idle');
         }
       };
 
       recognition.start();
     } catch (err) {
       console.error('Erro ao acessar o microfone:', err);
-      alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
       setVoiceState('idle');
+    }
+  };
+
+  const stopListening = () => {
+    isUserStoppedRef.current = true;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+    }
+    setVoiceState('idle');
+  };
+
+  const handleMicClick = () => {
+    if (voiceState === 'listening' || voiceState === 'speaking') {
+      stopListening();
+    } else {
+      startListening();
     }
   };
 
@@ -208,6 +244,14 @@ export const Assistant: React.FC = () => {
           if (!completed) {
             completed = true;
             setVoiceState('idle');
+            // Auto restart listening after JARVIS finishes speaking if continuous mode is enabled!
+            if (isContinuousRef.current && !isUserStoppedRef.current) {
+              setTimeout(() => {
+                if (isContinuousRef.current && !isUserStoppedRef.current) {
+                  startListening();
+                }
+              }, 400);
+            }
           }
         };
 
@@ -326,24 +370,48 @@ export const Assistant: React.FC = () => {
           <div className="hud-corner-tr" />
           <div className="hud-corner-bl" />
 
-          {/* Toggle Connected Apps Button */}
-          <button
-            onClick={() => {
-              soundManager.playClickSound();
-              setShowTree(!showTree);
-            }}
-            className="text-[11px] font-rajdhani font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/40 px-3 py-1 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.2)] mb-2"
-          >
-            <Network className="w-3.5 h-3.5 text-[#E024AF]" />
-            <span>{showTree ? 'OCULTAR SERVIÇOS' : 'EXIBIR SERVIÇOS'}</span>
-            {showTree ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap justify-center">
+            <button
+              onClick={() => {
+                soundManager.playClickSound();
+                setShowTree(!showTree);
+              }}
+              className="text-[11px] font-rajdhani font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/40 px-3 py-1 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.2)]"
+            >
+              <Network className="w-3.5 h-3.5 text-[#E024AF]" />
+              <span>{showTree ? 'OCULTAR SERVIÇOS' : 'EXIBIR SERVIÇOS'}</span>
+              {showTree ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
+            <button
+              onClick={() => {
+                soundManager.playClickSound();
+                const nextMode = !continuousMode;
+                setContinuousMode(nextMode);
+                if (!nextMode && (voiceState === 'listening' || voiceState === 'speaking')) {
+                  stopListening();
+                } else if (nextMode && voiceState === 'idle') {
+                  startListening();
+                }
+              }}
+              className={`text-[11px] font-rajdhani font-bold px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                continuousMode
+                  ? 'bg-pink-950/80 border-[#FF007A] text-pink-300 shadow-[0_0_12px_rgba(255,0,122,0.4)]'
+                  : 'bg-slate-950/80 border-slate-700 text-slate-400 hover:border-slate-500'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${continuousMode ? 'bg-[#FF007A] animate-ping' : 'bg-slate-600'}`} />
+              <span>{continuousMode ? 'MÃOS-LIVRES: ATIVO' : 'MÃOS-LIVRES: DESATIVADO'}</span>
+            </button>
+          </div>
 
           {/* Large Cyber Llama Avatar with Parallax & Mouth Animation */}
           <CyberLlamaAvatar
             state={voiceState}
             onClick={handleMicClick}
             hasPermission={hasMicPermission}
+            isContinuous={continuousMode}
           />
 
           {/* Quick Test Commands Bar */}

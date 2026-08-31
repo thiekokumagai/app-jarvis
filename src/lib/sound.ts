@@ -27,14 +27,35 @@ class SoundManager {
     }
 
     try {
-      window.speechSynthesis.cancel(); // Stop current speech
-      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel(); // Stop any current speech
+
+      // Clean text before sending to SpeechSynthesis (remove markdown, emojis, bullets)
+      const cleanedText = text
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/`(.*?)`/g, '$1')
+        .replace(/#/g, '')
+        .replace(/•/g, '')
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/\n+/g, '. ')
+        .trim();
+
+      if (!cleanedText) {
+        if (onEnd) onEnd();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
       utterance.lang = 'pt-BR';
-      utterance.pitch = 0.95; // Slightly deeper, refined JARVIS tone
-      utterance.rate = 1.05; // Quick responsive speed
+      utterance.pitch = 1.0; // Natural, fluid human tone
+      utterance.rate = 1.0; // Natural conversational cadence
 
       const voices = window.speechSynthesis.getVoices();
-      const ptVoice = voices.find((v) => v.lang.includes('pt') || v.lang.includes('PT'));
+      // Select best available pt-BR voice
+      const ptVoice =
+        voices.find((v) => (v.lang === 'pt-BR' || v.lang === 'pt_BR') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Luciana') || v.name.includes('Daniel') || v.name.includes('Francisca'))) ||
+        voices.find((v) => v.lang.includes('pt') || v.lang.includes('PT'));
+
       if (ptVoice) {
         utterance.voice = ptVoice;
       }

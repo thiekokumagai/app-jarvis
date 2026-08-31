@@ -8,9 +8,10 @@ interface CyberLlamaAvatarProps {
   state: VoiceState;
   onClick: () => void;
   hasPermission: boolean;
+  isContinuous?: boolean;
 }
 
-export const CyberLlamaAvatar: React.FC<CyberLlamaAvatarProps> = ({ state, onClick }) => {
+export const CyberLlamaAvatar: React.FC<CyberLlamaAvatarProps> = ({ state, onClick, isContinuous }) => {
   const [shockwave, setShockwave] = useState(false);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, scale: 1 });
 
@@ -58,14 +59,18 @@ export const CyberLlamaAvatar: React.FC<CyberLlamaAvatarProps> = ({ state, onCli
   const getStatusText = () => {
     switch (state) {
       case 'listening':
-        return 'RECEPTOR NEURAL ATIVO: FALE SEU COMANDO';
+        return isContinuous
+          ? 'MODO MÃOS-LIVRES ATIVO: OUVINDO CONTINUAMENTE...'
+          : 'RECEPTOR NEURAL ATIVO: FALE SEU COMANDO';
       case 'processing':
         return 'PROCESSANDO ALGORITMO & TOOL CALLING...';
       case 'speaking':
         return 'J.A.R.V.I.S. TRANSMITINDO ÁUDIO...';
       case 'idle':
       default:
-        return 'TOQUE NO AVATAR CYBER LLAMA PARA INICIAR VOZ';
+        return isContinuous
+          ? 'TOQUE NO AVATAR PARA INICIAR MODO MÃOS-LIVRES'
+          : 'TOQUE NO AVATAR CYBER LLAMA PARA INICIAR VOZ';
     }
   };
 
