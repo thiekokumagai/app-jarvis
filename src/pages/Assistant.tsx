@@ -86,32 +86,72 @@ export const Assistant: React.FC = () => {
     }
   };
 
-  // Handle Microphone Permission via Web Media API
+  const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef<string>('');
+
+  // Handle Microphone Permission and Real Speech Recognition via Web Speech API
   const handleMicClick = async () => {
-    if (voiceState === 'idle') {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Seu navegador não suporta reconhecimento de voz nativo. Por favor, utilize o Google Chrome, Microsoft Edge ou Safari.');
+      return;
+    }
+
+    if (voiceState === 'listening') {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setVoiceState('idle');
+      return;
+    }
+
+    try {
+      soundManager.playClickSound();
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognitionRef.current = recognition;
+      transcriptRef.current = '';
+
+      recognition.onstart = () => {
         setHasMicPermission(true);
         setVoiceState('listening');
+      };
 
-        // Simulate listening window
-        setTimeout(() => {
-          stream.getTracks().forEach((t) => t.stop());
-          const samplePrompts = [
-            'Agende uma reunião amanhã às 14h com o João',
-            'Quais compromissos eu tenho hoje?',
-            'Procure o contato do Carlos',
-            'Mande um WhatsApp para o Carlos dizendo que vou chegar às 15h',
-          ];
-          const randomPrompt = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
-          sendMessage(randomPrompt);
-        }, 3500);
-      } catch (err) {
-        console.error('Microphone permission denied', err);
-        alert('Permissão de microfone negada ou indisponível no navegador.');
+      recognition.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        if (currentTranscript.trim()) {
+          transcriptRef.current = currentTranscript;
+          setInputMessage(currentTranscript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Erro no reconhecimento de voz:', event.error);
+        if (event.error !== 'no-speech') {
+          setVoiceState('idle');
+        }
+      };
+
+      recognition.onend = () => {
         setVoiceState('idle');
-      }
-    } else if (voiceState === 'listening') {
+        const textToSend = transcriptRef.current.trim();
+        if (textToSend) {
+          sendMessage(textToSend);
+          transcriptRef.current = '';
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error('Erro ao acessar o microfone:', err);
+      alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
       setVoiceState('idle');
     }
   };
