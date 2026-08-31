@@ -60,10 +60,35 @@ class SoundManager {
         utterance.voice = ptVoice;
       }
 
-      if (onEnd) {
-        utterance.onend = onEnd;
-        utterance.onerror = onEnd;
-      }
+      let pulseInterval: any = null;
+
+      utterance.onstart = () => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('jarvis-speech-start'));
+          pulseInterval = setInterval(() => {
+            const intensity = Math.random() * 0.6 + 0.7;
+            window.dispatchEvent(new CustomEvent('jarvis-speech-pulse', { detail: { intensity } }));
+          }, 90);
+        }
+      };
+
+      utterance.onboundary = (event) => {
+        if (typeof window !== 'undefined') {
+          const intensity = 1.2 + Math.random() * 0.4;
+          window.dispatchEvent(new CustomEvent('jarvis-speech-pulse', { detail: { intensity } }));
+        }
+      };
+
+      const finishSpeech = () => {
+        if (pulseInterval) clearInterval(pulseInterval);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('jarvis-speech-end'));
+        }
+        if (onEnd) onEnd();
+      };
+
+      utterance.onend = finishSpeech;
+      utterance.onerror = finishSpeech;
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
