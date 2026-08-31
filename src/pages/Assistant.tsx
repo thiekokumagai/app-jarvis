@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CyberLlamaAvatar, VoiceState } from '../components/CyberLlamaAvatar';
 import { ConnectedAppsTree } from '../components/ConnectedAppsTree';
+import { RemindersWidget } from '../components/RemindersWidget';
 import { fetchWithAuth } from '../lib/api';
 import { soundManager } from '../lib/sound';
-import { Send, Bot, User as UserIcon, Sparkles, Terminal, CheckCircle2, Cpu, Flame, HardDrive, Wifi, Network, ChevronDown, ChevronUp, Mic, MessageSquare } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Sparkles, Terminal, CheckCircle2, Cpu, Flame, HardDrive, Wifi, Network, ChevronDown, ChevronUp, Mic, MessageSquare, Bell } from 'lucide-react';
 
 interface ChatMessage {
   id?: string;
@@ -21,6 +22,8 @@ export const Assistant: React.FC = () => {
   const [executedTools, setExecutedTools] = useState<any[]>([]);
   const [integrations, setIntegrations] = useState<any[]>([]);
   const [showTree, setShowTree] = useState(false);
+  const [showReminders, setShowReminders] = useState(false);
+  const [remindersRefreshTrigger, setRemindersRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState(false);
   const [mobileTab, setMobileTab] = useState<'avatar' | 'chat'>('avatar');
 
@@ -225,7 +228,13 @@ export const Assistant: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setConversationId(data.conversationId);
-        setExecutedTools(data.executedTools || []);
+        const toolsArr = data.executedTools || [];
+        setExecutedTools(toolsArr);
+
+        if (toolsArr.some((t: any) => t.tool === 'reminder.create' || t.tool === 'reminder.delete')) {
+          setRemindersRefreshTrigger((prev) => prev + 1);
+          setShowReminders(true);
+        }
 
         const assistantMsg: ChatMessage = {
           role: 'assistant',
@@ -359,6 +368,9 @@ export const Assistant: React.FC = () => {
       {/* Subtle Connected Apps Node Tree Component */}
       {showTree && <ConnectedAppsTree integrations={integrations} />}
 
+      {/* Reminders Visual Panel */}
+      {showReminders && <RemindersWidget refreshTrigger={remindersRefreshTrigger} />}
+
       {/* SIDE-BY-SIDE DASHBOARD GRID (DESKTOP) & TOUCH TABS (MOBILE) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 flex-1 items-stretch">
         {/* LEFT COLUMN: CYBER LLAMA AVATAR & QUICK COMMANDS */}
@@ -375,12 +387,28 @@ export const Assistant: React.FC = () => {
             <button
               onClick={() => {
                 soundManager.playClickSound();
+                setShowReminders(!showReminders);
+              }}
+              className={`text-[11px] font-rajdhani font-bold px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                showReminders
+                  ? 'bg-cyan-950 border-[#00F0FF] text-cyan-300 shadow-[0_0_12px_#00F0FF]'
+                  : 'bg-cyan-950/70 hover:bg-cyan-900 border-cyan-500/40 text-cyan-300'
+              }`}
+            >
+              <Bell className="w-3.5 h-3.5 text-[#00F0FF]" />
+              <span>{showReminders ? 'OCULTAR LEMBRETES' : 'LEMBRETES AGENDADOS'}</span>
+              {showReminders ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
+            <button
+              onClick={() => {
+                soundManager.playClickSound();
                 setShowTree(!showTree);
               }}
               className="text-[11px] font-rajdhani font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-500/40 px-3 py-1 rounded-full flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.2)]"
             >
               <Network className="w-3.5 h-3.5 text-[#E024AF]" />
-              <span>{showTree ? 'OCULTAR SERVIÇOS' : 'EXIBIR SERVIÇOS'}</span>
+              <span>{showTree ? 'OCULTAR SERVIÇOS' : 'SERVIÇOS'}</span>
               {showTree ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
