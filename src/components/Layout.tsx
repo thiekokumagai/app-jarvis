@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { HudBackground } from './HudBackground';
 import { JarvisBootOverlay } from './JarvisBootOverlay';
+import { PWAUpdatePrompt } from './PWAUpdatePrompt';
+import { PushNotificationManager } from './PushNotificationManager';
 import { soundManager } from '../lib/sound';
 import { Bot, Link2, Settings, LogOut, Shield, Wifi, Volume2, VolumeX, RefreshCw } from 'lucide-react';
 
@@ -43,6 +45,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Boot Overlay Sequence */}
       {showBoot && <JarvisBootOverlay userName={user?.name} onComplete={() => setShowBoot(false)} />}
+
+      {/* PWA Update & Push Notification Prompts (Only for authenticated users) */}
+      <PWAUpdatePrompt />
+      <PushNotificationManager />
 
       {/* HUD Header */}
       <header className="border-b border-cyan-500/20 glass-panel sticky top-0 z-50">

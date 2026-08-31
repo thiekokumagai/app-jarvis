@@ -222,6 +222,8 @@ export const Assistant: React.FC = () => {
         body: JSON.stringify({
           message: text,
           conversationId: conversationId || undefined,
+          userTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          userLocalTimeStr: new Date().toLocaleString('pt-BR'),
         }),
       });
 

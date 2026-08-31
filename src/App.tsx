@@ -33,8 +33,6 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <PWAUpdatePrompt />
-        <PushNotificationManager />
         <Routes>
           {/* Public Authentication Routes */}
           <Route path="/login" element={<Login />} />
